@@ -26,7 +26,7 @@ namespace kim.present.lumaisland.replaceitemicons
                     "Extract Settings",
                     "EnableItemIconExtract",
                     false,
-                    "Extract the item texture to the 'extracted' directory in the directory where the mode dll is located."
+                    "Extract the item texture to the 'extracted' directory in the directory where the mod dll is located."
                 ),
                 Path.Combine(ModDirectory, "extracted"));
 

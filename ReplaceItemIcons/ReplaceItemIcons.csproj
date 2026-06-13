@@ -74,6 +74,7 @@
     <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets"/>
 
     <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+        <RemoveDir Directories="$(GameDir)\BepInEx\plugins\ReplaceItemIcons\extracted" />
         <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(GameDir)\BepInEx\plugins\ReplaceItemIcons\"/>
     </Target>
 </Project>
