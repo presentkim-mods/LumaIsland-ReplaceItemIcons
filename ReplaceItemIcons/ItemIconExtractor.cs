@@ -115,9 +115,9 @@ namespace kim.present.lumaisland.replaceitemicons
                         continue;
                     }
 
-                    GenericGetSpritePatch.BypassCustomIcons = true;
-                    Sprite sprite = itemType.GetSprite();
-                    GenericGetSpritePatch.BypassCustomIcons = false;
+                    Sprite sprite;
+                    using (GenericGetSpritePatch.BeginBypass())
+                        sprite = itemType.GetSprite();
                     if (!sprite) continue;
 
                     InFlightExtract extract = StartExtractReadback(sprite, itemType);
@@ -145,9 +145,9 @@ namespace kim.present.lumaisland.replaceitemicons
                     continue;
                 }
 
-                GenericGetSpritePatch.BypassCustomIcons = true;
-                Sprite sprite = itemType.GetSprite();
-                GenericGetSpritePatch.BypassCustomIcons = false;
+                Sprite sprite;
+                using (GenericGetSpritePatch.BeginBypass())
+                    sprite = itemType.GetSprite();
                 if (!sprite) continue;
 
                 if (TryExtractSpriteSync(sprite, itemType.Name)) extractedCount++;
@@ -297,7 +297,7 @@ namespace kim.present.lumaisland.replaceitemicons
         }
 
         private void WritePngFromRgba(NativeArray<byte> rgba, int width, int height, string itemName)
-        { 
+        {
             var pngNativeArr = ImageConversion.EncodeNativeArrayToPNG(
                 rgba,
                 GraphicsFormat.R8G8B8A8_UNorm,

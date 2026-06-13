@@ -98,18 +98,26 @@ namespace kim.present.lumaisland.replaceitemicons
         }
     }
 
-    // ========================================================================================
-    // [Harmony] Intercepts item sprite generation in real-time
-    // ========================================================================================
     [HarmonyPatch(typeof(InventoryItemsExtensions), "GetSprite", typeof(InventoryItemsData), typeof(int?))]
     public class GenericGetSpritePatch
     {
-        public static bool BypassCustomIcons = false;
+        private static bool _bypass;
+
+        internal static IDisposable BeginBypass()
+        {
+            _bypass = true;
+            return new BypassCookie();
+        }
+
+        private sealed class BypassCookie : IDisposable
+        {
+            public void Dispose() => _bypass = false;
+        }
 
         [HarmonyPrefix]
         public static bool Prefix(InventoryItemsData itemType, int? skin, ref Sprite __result)
         {
-            if (BypassCustomIcons) return true;
+            if (_bypass) return true;
             if (itemType is null || string.IsNullOrEmpty(itemType.Name)) return true;
             if (!ReplaceItemIcons.CustomIconSprites.TryGetValue(itemType.Name, out Sprite customSprite)) return true;
 
