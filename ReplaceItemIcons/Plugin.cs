@@ -77,7 +77,7 @@ namespace kim.present.lumaisland.replaceitemicons
                         continue;
                     }
 
-                    texture.filterMode = FilterMode.Point;
+                    texture.filterMode = FilterMode.Bilinear;
                     if (CustomIconSprites.TryGetValue(itemName, out Sprite existingSprite))
                         DestroyCustomIcon(existingSprite);
 
