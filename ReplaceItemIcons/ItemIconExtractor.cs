@@ -297,11 +297,21 @@ namespace kim.present.lumaisland.replaceitemicons
         }
 
         private void WritePngFromRgba(NativeArray<byte> rgba, int width, int height, string itemName)
-        {
-            byte[] png = ImageConversion
-                .EncodeNativeArrayToPNG(rgba, GraphicsFormat.R8G8B8A8_UNorm, (uint)width, (uint)height)
-                .ToArray();
-            File.WriteAllBytes(Path.Combine(_extractDirectory, $"{itemName}.png"), png);
+        { 
+            var pngNativeArr = ImageConversion.EncodeNativeArrayToPNG(
+                rgba,
+                GraphicsFormat.R8G8B8A8_UNorm,
+                (uint)width,
+                (uint)height
+            );
+            try
+            {
+                File.WriteAllBytes(Path.Combine(_extractDirectory, $"{itemName}.png"), pngNativeArr.ToArray());
+            }
+            finally
+            {
+                pngNativeArr.Dispose();
+            }
         }
 
         private static void ReleaseInFlightExtract(InFlightExtract extract)
