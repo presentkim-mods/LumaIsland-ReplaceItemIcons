@@ -25,6 +25,8 @@ namespace kim.present.lumaisland.replaceitemicons
         private const int MaxReadbackStartsPerFrame = 8;
         private const int MaxPngWritesPerFrame = 8;
 
+        private const string LogTag = "[Extract]";
+
         private readonly ManualLogSource _logger;
         private readonly ConfigEntry<bool> _extractEnabled;
         private readonly string _extractDirectory;
@@ -65,12 +67,12 @@ namespace kim.present.lumaisland.replaceitemicons
         {
             if (!_extractEnabled.Value) yield break;
 
-            _logger.LogInfo("[Extract] Trying to extract item textures to " + _extractDirectory);
+            LogInfo("Trying to extract item textures to " + _extractDirectory);
 
             // Wait until the main game database and inventory system are fully loaded and accessible
             while (GameData.Instance?.InventoryItemsDB is null) yield return null;
 
-            _logger.LogInfo("[Extract] Starts to extract item textures on background");
+            LogInfo("Starts to extract item textures on background");
 
             Directory.CreateDirectory(_extractDirectory);
             int extractedCount = 0;
@@ -156,8 +158,7 @@ namespace kim.present.lumaisland.replaceitemicons
                 yield return null;
             }
 
-            _logger.LogInfo(
-                $"[Extract] Extracted {extractedCount} sprites, {skippedCount} skipped, {failedCount} failed");
+            LogInfo($"Extracted {extractedCount} sprites, {skippedCount} skipped, {failedCount} failed");
         }
 
         private InFlightExtract StartExtractReadback(Sprite sprite, InventoryItemsData itemType)
@@ -184,7 +185,7 @@ namespace kim.present.lumaisland.replaceitemicons
             }
             catch (Exception ex)
             {
-                _logger.LogError($"[Extract] Failed to start extract for item: {itemType.Name}\n{ex}");
+                LogError($"Failed to start extract for item: {itemType.Name}\n{ex}");
                 if (captureRenderTexture) RenderTexture.ReleaseTemporary(captureRenderTexture);
                 return null;
             }
@@ -198,9 +199,7 @@ namespace kim.present.lumaisland.replaceitemicons
         {
             if (extract.ReadbackRequest.hasError)
             {
-                _logger.LogWarning(
-                    $"[Extract] GPU readback failed for item: {extract.ItemName}, trying synchronous fallback"
-                );
+                LogWarning($"GPU readback failed for item: {extract.ItemName}, trying synchronous fallback");
                 return TryWriteExtractSync(extract.CaptureRenderTexture, extract.ItemName);
             }
 
@@ -216,7 +215,7 @@ namespace kim.present.lumaisland.replaceitemicons
             }
             catch (Exception ex)
             {
-                _logger.LogError($"[Extract] Failed to write item: {extract.ItemName}\n{ex}");
+                LogError($"Failed to write item: {extract.ItemName}\n{ex}");
                 return false;
             }
         }
@@ -238,7 +237,7 @@ namespace kim.present.lumaisland.replaceitemicons
             }
             catch (Exception ex)
             {
-                _logger.LogError($"[Extract] Failed to extract item icon: {itemName}\n{ex}");
+                LogError($"Failed to extract item icon: {itemName}\n{ex}");
                 return false;
             }
             finally
@@ -274,7 +273,7 @@ namespace kim.present.lumaisland.replaceitemicons
             }
             catch (Exception ex)
             {
-                _logger.LogError($"[Extract] Synchronous extract failed for item: {itemName}\n{ex}");
+                LogError($"Synchronous extract failed for item: {itemName}\n{ex}");
                 return false;
             }
             finally
@@ -318,6 +317,10 @@ namespace kim.present.lumaisland.replaceitemicons
         {
             if (extract.CaptureRenderTexture) RenderTexture.ReleaseTemporary(extract.CaptureRenderTexture);
         }
+
+        private void LogInfo(string message) => _logger.LogInfo(LogTag + " " + message);
+        private void LogWarning(string message) => _logger.LogWarning(LogTag + " " + message);
+        private void LogError(string message) => _logger.LogError(LogTag + " " + message);
 
         public void Dispose()
         {
