@@ -16,14 +16,29 @@ namespace kim.present.lumaisland.replaceitemicons
 
         private static string ModDirectory => Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
 
+        private ItemIconExtractor _extractor;
+
         private void Awake()
         {
+            _extractor = new ItemIconExtractor(
+                Logger,
+                Config.Bind(
+                    "Extract Settings",
+                    "EnableItemIconExtract",
+                    false,
+                    "Extract the item texture to the 'extracted' directory in the directory where the mode dll is located."
+                ),
+                Path.Combine(ModDirectory, "extracted"));
+
             LoadAllCustomIcons();
             new Harmony("kim.present.lumaisland.replaceitemicons").PatchAll();
+
+            StartCoroutine(_extractor.TryExtract());
         }
 
         private void OnDestroy()
         {
+            _extractor.Dispose();
             UnloadAllCustomIcons();
         }
 
