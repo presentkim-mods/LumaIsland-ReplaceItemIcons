@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace kim.present.lumaisland.replaceitemicons
 {
-    [BepInPlugin("kim.present.lumaisland.replaceitemicons", "ReplaceItemIcons", "1.0.0")]
+    [BepInPlugin("kim.present.lumaisland.replaceitemicons", "ReplaceItemIcons", "1.0.1")]
     public class ReplaceItemIcons : BaseUnityPlugin
     {
         public static readonly Dictionary<string, Sprite> CustomIconSprites =
