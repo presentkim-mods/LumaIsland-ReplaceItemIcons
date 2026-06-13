@@ -22,6 +22,27 @@ namespace kim.present.lumaisland.replaceitemicons
             new Harmony("kim.present.lumaisland.replaceitemicons").PatchAll();
         }
 
+        private void OnDestroy()
+        {
+            UnloadAllCustomIcons();
+        }
+
+        private static void DestroyCustomIcon(Sprite sprite)
+        {
+            if (!sprite) return;
+
+            Texture2D texture = sprite.texture;
+            Destroy(sprite);
+            if (texture) Destroy(texture);
+        }
+
+        private static void UnloadAllCustomIcons()
+        {
+            foreach (Sprite sprite in CustomIconSprites.Values) DestroyCustomIcon(sprite);
+
+            CustomIconSprites.Clear();
+        }
+
         private void LoadAllCustomIcons()
         {
             if (!Directory.Exists(ModDirectory))
@@ -42,6 +63,8 @@ namespace kim.present.lumaisland.replaceitemicons
                     }
 
                     texture.filterMode = FilterMode.Point;
+                    if (CustomIconSprites.TryGetValue(itemName, out Sprite existingSprite))
+                        DestroyCustomIcon(existingSprite);
 
                     CustomIconSprites[itemName] =
                         Sprite.Create(
