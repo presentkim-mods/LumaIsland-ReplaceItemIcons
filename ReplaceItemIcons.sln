@@ -1,0 +1,16 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReplaceItemIcons", "ReplaceItemIcons\ReplaceItemIcons.csproj", "{D35F6AE0-9A14-437E-807E-9780ABE9F17A}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D35F6AE0-9A14-437E-807E-9780ABE9F17A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D35F6AE0-9A14-437E-807E-9780ABE9F17A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D35F6AE0-9A14-437E-807E-9780ABE9F17A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D35F6AE0-9A14-437E-807E-9780ABE9F17A}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
