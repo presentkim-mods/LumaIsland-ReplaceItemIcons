@@ -29,7 +29,7 @@ namespace kim.present.lumaisland.replaceitemicons
             _replacer.LoadAllCustomIcons();
             StartCoroutine(_extractor.TryExtract());
 
-            new Harmony("kim.present.lumaisland.replaceitemicons").PatchAll();
+            new Harmony(Info.Metadata.GUID).PatchAll();
         }
 
         private void OnDestroy()
