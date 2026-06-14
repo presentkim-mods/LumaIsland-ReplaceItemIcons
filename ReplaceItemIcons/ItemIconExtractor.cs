@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -13,6 +13,9 @@ using Object = UnityEngine.Object;
 
 namespace kim.present.lumaisland.replaceitemicons
 {
+    /// <summary>
+    /// Extracts inventory item sprites to PNG files using asynchronous GPU readback with synchronous fallback.
+    /// </summary>
     public class ItemIconExtractor : Feature, IDisposable
     {
         // Extract pipeline tuning (see TryExtract):
@@ -34,6 +37,12 @@ namespace kim.present.lumaisland.replaceitemicons
         private readonly Camera _camera;
         private readonly SpriteRenderer _renderer;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ItemIconExtractor"/> class.
+        /// Creates a hidden camera and sprite renderer for capturing item textures.
+        /// </summary>
+        /// <param name="plugin">The owning BepInEx plugin instance.</param>
+        /// <param name="logger">The BepInEx log source.</param>
         public ItemIconExtractor(BaseUnityPlugin plugin, ManualLogSource logger) : base(plugin, logger, "[Extract]")
         {
             _extractEnabled = plugin.Config.Bind(
@@ -66,11 +75,18 @@ namespace kim.present.lumaisland.replaceitemicons
             }.AddComponent<SpriteRenderer>();
         }
 
+        /// <summary>
+        /// Starts the extraction coroutine if the feature is enabled via config.
+        /// </summary>
         public override void Run()
         {
             Plugin.StartCoroutine(TryExtract());
         }
 
+        /// <summary>
+        /// Iterates all inventory items, renders each sprite to a render texture, and saves as PNG.
+        /// Uses async GPU readback for performance with a synchronous fallback for failed readbacks.
+        /// </summary>
         private IEnumerator TryExtract()
         {
             if (!_extractEnabled.Value) yield break;
@@ -169,6 +185,9 @@ namespace kim.present.lumaisland.replaceitemicons
             LogInfo($"Extracted {extractedCount} sprites, {skippedCount} skipped, {failedCount} failed");
         }
 
+        /// <summary>
+        /// Renders a sprite to a render texture and initiates an async GPU readback.
+        /// </summary>
         private InFlightExtract StartExtractReadback(Sprite sprite, InventoryItemsData itemType)
         {
             RenderTexture captureRenderTexture = null;
@@ -203,6 +222,9 @@ namespace kim.present.lumaisland.replaceitemicons
             }
         }
 
+        /// <summary>
+        /// Processes a completed async readback: writes PNG on success, falls back to synchronous extraction on error.
+        /// </summary>
         private bool TryWriteExtractFromReadback(InFlightExtract extract)
         {
             if (extract.ReadbackRequest.hasError)
@@ -228,6 +250,10 @@ namespace kim.present.lumaisland.replaceitemicons
             }
         }
 
+        /// <summary>
+        /// Synchronously renders a sprite to a render texture and writes it as PNG.
+        /// Used as a fallback when async GPU readback fails.
+        /// </summary>
         private bool TryExtractSpriteSync(Sprite sprite, string itemName)
         {
             RenderTexture captureRenderTexture = null;
@@ -255,6 +281,9 @@ namespace kim.present.lumaisland.replaceitemicons
             }
         }
 
+        /// <summary>
+        /// Reads pixel data from a render texture via <c>ReadPixels</c> and writes it as a PNG file.
+        /// </summary>
         private bool TryWriteExtractSync(RenderTexture captureRenderTexture, string itemName)
         {
             Texture2D readbackTexture = null;
@@ -291,6 +320,9 @@ namespace kim.present.lumaisland.replaceitemicons
             }
         }
 
+        /// <summary>
+        /// Positions the hidden camera to frame the given sprite and renders it to the target render texture.
+        /// </summary>
         private void RenderSpriteToTexture(Sprite sprite, RenderTexture captureRenderTexture)
         {
             _camera.targetTexture = captureRenderTexture;
@@ -303,6 +335,9 @@ namespace kim.present.lumaisland.replaceitemicons
             _camera.Render();
         }
 
+        /// <summary>
+        /// Encodes raw RGBA data to PNG and writes it to the extraction directory.
+        /// </summary>
         private void WritePngFromRgba(NativeArray<byte> rgba, int width, int height, string itemName)
         {
             var pngNativeArr = ImageConversion.EncodeNativeArrayToPNG(
@@ -321,17 +356,26 @@ namespace kim.present.lumaisland.replaceitemicons
             }
         }
 
+        /// <summary>
+        /// Releases the temporary render texture held by an in-flight extract.
+        /// </summary>
         private static void ReleaseInFlightExtract(InFlightExtract extract)
         {
             if (extract.CaptureRenderTexture) RenderTexture.ReleaseTemporary(extract.CaptureRenderTexture);
         }
 
+        /// <summary>
+        /// Destroys the hidden camera and sprite renderer game objects.
+        /// </summary>
         public void Dispose()
         {
             if (_camera) Object.Destroy(_camera.gameObject);
             if (_renderer) Object.Destroy(_renderer.gameObject);
         }
 
+        /// <summary>
+        /// Holds state for a single sprite extraction that is waiting for GPU readback to complete.
+        /// </summary>
         private sealed class InFlightExtract
         {
             public InventoryItemsData ItemType;

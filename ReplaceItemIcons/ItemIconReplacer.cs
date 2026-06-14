@@ -9,6 +9,10 @@ using Object = UnityEngine.Object;
 
 namespace kim.present.lumaisland.replaceitemicons
 {
+    /// <summary>
+    /// Replaces in-game item sprites with custom PNG icons loaded from the mod directory.
+    /// Patches <see cref="global::InventoryItemsExtensions.GetSprite"/> via Harmony.
+    /// </summary>
     [HarmonyPatch(typeof(InventoryItemsExtensions), "GetSprite", typeof(InventoryItemsData), typeof(int?))]
     public class ItemIconReplacer : Feature, IDisposable
     {
@@ -19,28 +23,39 @@ namespace kim.present.lumaisland.replaceitemicons
 
         private readonly string _iconDirectory;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ItemIconReplacer"/> class.
+        /// </summary>
+        /// <param name="plugin">The owning BepInEx plugin instance.</param>
+        /// <param name="logger">The BepInEx log source.</param>
         public ItemIconReplacer(BaseUnityPlugin plugin, ManualLogSource logger) : base(plugin, logger, "[Replace]")
         {
             _iconDirectory = Path.GetDirectoryName(plugin.Info.Location);
         }
 
+        /// <summary>
+        /// Loads all custom PNG icons from the mod directory into memory.
+        /// </summary>
         public override void Run()
         {
             LoadAllCustomIcons();
         }
 
-        /**
-         * Temporarily bypasses this patch so the original <c>GetSprite</c> logic
-         * runs instead of returning the custom icon.
-         * Use with <c>using (ItemIconReplacer.Bypass())</c> to automatically
-         * restore the patch when the scope ends.
-         */
+        /// <summary>
+        /// Temporarily bypasses this patch so the original <c>GetSprite</c> logic
+        /// runs instead of returning the custom icon.
+        /// Use with <c>using (ItemIconReplacer.Bypass())</c> to automatically
+        /// restore the patch when the scope ends.
+        /// </summary>
         public static IDisposable Bypass()
         {
             _bypass = true;
             return new BypassScope();
         }
 
+        /// <summary>
+        /// Scans the mod directory for PNG files and loads them as sprite overrides.
+        /// </summary>
         private void LoadAllCustomIcons()
         {
             if (!Directory.Exists(_iconDirectory))
@@ -80,6 +95,9 @@ namespace kim.present.lumaisland.replaceitemicons
             LogInfo($"Loaded {CustomIconSprites.Count} custom icons");
         }
 
+        /// <summary>
+        /// Destroys all loaded custom sprites and releases their textures.
+        /// </summary>
         public void Dispose()
         {
             foreach (Sprite sprite in CustomIconSprites.Values)
@@ -88,6 +106,9 @@ namespace kim.present.lumaisland.replaceitemicons
             CustomIconSprites.Clear();
         }
 
+        /// <summary>
+        /// Safely destroys a sprite and its underlying texture.
+        /// </summary>
         private static void DestroyCustomIcon(Sprite sprite)
         {
             if (!sprite) return;
@@ -97,6 +118,10 @@ namespace kim.present.lumaisland.replaceitemicons
             if (texture) Object.Destroy(texture);
         }
 
+        /// <summary>
+        /// Harmony prefix for <c>InventoryItemsExtensions.GetSprite</c>.
+        /// Returns the custom sprite if one exists for the requested item; otherwise falls through to the original method.
+        /// </summary>
         [HarmonyPrefix]
         public static bool Prefix(InventoryItemsData itemType, int? skin, ref Sprite __result)
         {
@@ -108,6 +133,9 @@ namespace kim.present.lumaisland.replaceitemicons
             return false;
         }
 
+        /// <summary>
+        /// Resets the <c>_bypass</c> flag when disposed, re-enabling the custom icon patch.
+        /// </summary>
         private sealed class BypassScope : IDisposable
         {
             public void Dispose() => _bypass = false;

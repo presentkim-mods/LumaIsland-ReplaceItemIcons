@@ -3,6 +3,10 @@ using HarmonyLib;
 
 namespace kim.present.lumaisland.replaceitemicons
 {
+    /// <summary>
+    /// Main plugin class for the ReplaceItemIcons BepInEx mod.
+    /// Initializes and manages icon replacement and extraction features.
+    /// </summary>
     [BepInPlugin("kim.present.lumaisland.replaceitemicons", "ReplaceItemIcons", "1.0.1")]
     public class ReplaceItemIcons : BaseUnityPlugin
     {
