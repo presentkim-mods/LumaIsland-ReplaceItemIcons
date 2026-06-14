@@ -118,7 +118,7 @@ namespace kim.present.lumaisland.replaceitemicons
                     }
 
                     Sprite sprite;
-                    using (GenericGetSpritePatch.BeginBypass())
+                    using (GenericGetSpritePatch.Bypass())
                         sprite = itemType.GetSprite();
                     if (!sprite) continue;
 
@@ -148,7 +148,7 @@ namespace kim.present.lumaisland.replaceitemicons
                 }
 
                 Sprite sprite;
-                using (GenericGetSpritePatch.BeginBypass())
+                using (GenericGetSpritePatch.Bypass())
                     sprite = itemType.GetSprite();
                 if (!sprite) continue;
 

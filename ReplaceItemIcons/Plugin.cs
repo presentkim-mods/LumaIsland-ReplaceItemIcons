@@ -103,13 +103,19 @@ namespace kim.present.lumaisland.replaceitemicons
     {
         private static bool _bypass;
 
-        internal static IDisposable BeginBypass()
+        /**
+         * Temporarily bypasses the <see cref="Prefix"/> patch so the original
+         * <c>GetSprite</c> logic runs instead of returning the custom icon.
+         * Use with <c>using (GenericGetSpritePatch.BeginBypass())</c> to
+         * automatically restore the patch when the scope ends.
+         */
+        internal static IDisposable Bypass()
         {
             _bypass = true;
-            return new BypassCookie();
+            return new BypassScope();
         }
 
-        private sealed class BypassCookie : IDisposable
+        private sealed class BypassScope : IDisposable
         {
             public void Dispose() => _bypass = false;
         }
