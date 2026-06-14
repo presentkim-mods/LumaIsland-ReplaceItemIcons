@@ -1,25 +1,21 @@
-using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using BepInEx;
 using HarmonyLib;
-using UnityEngine;
 
 namespace kim.present.lumaisland.replaceitemicons
 {
     [BepInPlugin("kim.present.lumaisland.replaceitemicons", "ReplaceItemIcons", "1.0.1")]
     public class ReplaceItemIcons : BaseUnityPlugin
     {
-        public static readonly Dictionary<string, Sprite> CustomIconSprites =
-            new Dictionary<string, Sprite>(StringComparer.OrdinalIgnoreCase);
-
         private static string ModDirectory => Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
 
         private ItemIconExtractor _extractor;
+        private ItemIconReplacer _replacer;
 
         private void Awake()
         {
+            _replacer = new ItemIconReplacer(Logger, ModDirectory);
             _extractor = new ItemIconExtractor(
                 Logger,
                 Config.Bind(
@@ -30,105 +26,16 @@ namespace kim.present.lumaisland.replaceitemicons
                 ),
                 Path.Combine(ModDirectory, "extracted"));
 
-            LoadAllCustomIcons();
-            new Harmony("kim.present.lumaisland.replaceitemicons").PatchAll();
-
+            _replacer.LoadAllCustomIcons();
             StartCoroutine(_extractor.TryExtract());
+
+            new Harmony("kim.present.lumaisland.replaceitemicons").PatchAll();
         }
 
         private void OnDestroy()
         {
+            _replacer.Dispose();
             _extractor.Dispose();
-            UnloadAllCustomIcons();
-        }
-
-        private static void DestroyCustomIcon(Sprite sprite)
-        {
-            if (!sprite) return;
-
-            Texture2D texture = sprite.texture;
-            Destroy(sprite);
-            if (texture) Destroy(texture);
-        }
-
-        private static void UnloadAllCustomIcons()
-        {
-            foreach (Sprite sprite in CustomIconSprites.Values) DestroyCustomIcon(sprite);
-
-            CustomIconSprites.Clear();
-        }
-
-        private void LoadAllCustomIcons()
-        {
-            if (!Directory.Exists(ModDirectory))
-                return;
-
-            foreach (string filePath in Directory.GetFiles(ModDirectory, "*.png"))
-            {
-                try
-                {
-                    string itemName = Path.GetFileNameWithoutExtension(filePath);
-                    byte[] fileData = File.ReadAllBytes(filePath);
-
-                    Texture2D texture = new Texture2D(2, 2);
-                    if (!texture.LoadImage(fileData))
-                    {
-                        Destroy(texture);
-                        continue;
-                    }
-
-                    texture.filterMode = FilterMode.Bilinear;
-                    if (CustomIconSprites.TryGetValue(itemName, out Sprite existingSprite))
-                        DestroyCustomIcon(existingSprite);
-
-                    CustomIconSprites[itemName] =
-                        Sprite.Create(
-                            texture,
-                            new Rect(0, 0, texture.width, texture.height),
-                            new Vector2(0.5f, 0.5f)
-                        );
-                }
-                catch (Exception ex)
-                {
-                    Logger.LogError($"Failed loading icon: {filePath}\n{ex}");
-                }
-            }
-
-            Logger.LogInfo($"Loaded {CustomIconSprites.Count} custom icons");
-        }
-    }
-
-    [HarmonyPatch(typeof(InventoryItemsExtensions), "GetSprite", typeof(InventoryItemsData), typeof(int?))]
-    public class GenericGetSpritePatch
-    {
-        private static bool _bypass;
-
-        /**
-         * Temporarily bypasses the <see cref="Prefix"/> patch so the original
-         * <c>GetSprite</c> logic runs instead of returning the custom icon.
-         * Use with <c>using (GenericGetSpritePatch.BeginBypass())</c> to
-         * automatically restore the patch when the scope ends.
-         */
-        internal static IDisposable Bypass()
-        {
-            _bypass = true;
-            return new BypassScope();
-        }
-
-        private sealed class BypassScope : IDisposable
-        {
-            public void Dispose() => _bypass = false;
-        }
-
-        [HarmonyPrefix]
-        public static bool Prefix(InventoryItemsData itemType, int? skin, ref Sprite __result)
-        {
-            if (_bypass) return true;
-            if (itemType is null || string.IsNullOrEmpty(itemType.Name)) return true;
-            if (!ReplaceItemIcons.CustomIconSprites.TryGetValue(itemType.Name, out Sprite customSprite)) return true;
-
-            __result = customSprite;
-            return false;
         }
     }
 }

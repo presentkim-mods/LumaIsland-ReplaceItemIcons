@@ -69,6 +69,7 @@
         <Compile Include="Plugin.cs"/>
         <Compile Include="Properties\AssemblyInfo.cs"/>
         <Compile Include="ItemIconExtractor.cs" />
+        <Compile Include="ItemIconReplacer.cs" />
     </ItemGroup>
 
     <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets"/>
