@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using BepInEx;
 using BepInEx.Logging;
 using HarmonyLib;
 using UnityEngine;
@@ -9,20 +10,23 @@ using Object = UnityEngine.Object;
 namespace kim.present.lumaisland.replaceitemicons
 {
     [HarmonyPatch(typeof(InventoryItemsExtensions), "GetSprite", typeof(InventoryItemsData), typeof(int?))]
-    public class ItemIconReplacer : IDisposable
+    public class ItemIconReplacer : Feature, IDisposable
     {
         private static readonly Dictionary<string, Sprite> CustomIconSprites =
             new Dictionary<string, Sprite>(StringComparer.OrdinalIgnoreCase);
 
         private static bool _bypass;
 
-        private readonly ManualLogSource _logger;
-        private readonly string _modDirectory;
+        private readonly string _iconDirectory;
 
-        public ItemIconReplacer(ManualLogSource logger, string modDirectory)
+        public ItemIconReplacer(BaseUnityPlugin plugin, ManualLogSource logger) : base(plugin, logger, "[Replace]")
         {
-            _logger = logger;
-            _modDirectory = modDirectory;
+            _iconDirectory = Path.GetDirectoryName(plugin.Info.Location);
+        }
+
+        public override void Run()
+        {
+            LoadAllCustomIcons();
         }
 
         /**
@@ -37,12 +41,12 @@ namespace kim.present.lumaisland.replaceitemicons
             return new BypassScope();
         }
 
-        public void LoadAllCustomIcons()
+        private void LoadAllCustomIcons()
         {
-            if (!Directory.Exists(_modDirectory))
+            if (!Directory.Exists(_iconDirectory))
                 return;
 
-            foreach (string filePath in Directory.GetFiles(_modDirectory, "*.png"))
+            foreach (string filePath in Directory.GetFiles(_iconDirectory, "*.png"))
             {
                 try
                 {
@@ -69,11 +73,11 @@ namespace kim.present.lumaisland.replaceitemicons
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError($"Failed loading icon: {filePath}\n{ex}");
+                    LogError($"Failed loading icon: {filePath}\n{ex}");
                 }
             }
 
-            _logger.LogInfo($"Loaded {CustomIconSprites.Count} custom icons");
+            LogInfo($"Loaded {CustomIconSprites.Count} custom icons");
         }
 
         public void Dispose()

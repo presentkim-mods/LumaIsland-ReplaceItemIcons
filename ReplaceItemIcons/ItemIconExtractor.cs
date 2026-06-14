@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using BepInEx;
 using BepInEx.Configuration;
 using BepInEx.Logging;
 using Unity.Collections;
@@ -12,7 +13,7 @@ using Object = UnityEngine.Object;
 
 namespace kim.present.lumaisland.replaceitemicons
 {
-    public class ItemIconExtractor : IDisposable
+    public class ItemIconExtractor : Feature, IDisposable
     {
         // Extract pipeline tuning (see TryExtract):
         // - MaxInFlightReadbacks: max concurrent GPU readbacks. Each holds a RenderTexture until readback completes.
@@ -25,45 +26,52 @@ namespace kim.present.lumaisland.replaceitemicons
         private const int MaxReadbackStartsPerFrame = 8;
         private const int MaxPngWritesPerFrame = 8;
 
-        private const string LogTag = "[Extract]";
+        private const int CameraLayer = 31;
 
-        private readonly ManualLogSource _logger;
         private readonly ConfigEntry<bool> _extractEnabled;
         private readonly string _extractDirectory;
 
         private readonly Camera _camera;
         private readonly SpriteRenderer _renderer;
 
-        public ItemIconExtractor(ManualLogSource logger, ConfigEntry<bool> extractEnabled, string extractDirectory)
+        public ItemIconExtractor(BaseUnityPlugin plugin, ManualLogSource logger) : base(plugin, logger, "[Extract]")
         {
-            _logger = logger;
-            _extractEnabled = extractEnabled;
-            _extractDirectory = extractDirectory;
+            _extractEnabled = plugin.Config.Bind(
+                "Extract Settings",
+                "EnableItemIconExtract",
+                false,
+                "Extract the item texture to the 'extracted' directory in the directory where the mod dll is located."
+            );
+            _extractDirectory = Path.Combine(
+                Path.GetDirectoryName(plugin.Info.Location) ?? throw new InvalidOperationException(),
+                "extracted"
+            );
 
             // Create camera object for capturing item textures
-            GameObject camObj = new GameObject("ItemTextureExtractor_Camera")
+            _camera = new GameObject("ItemTextureExtractor_Camera")
             {
                 hideFlags = HideFlags.HideAndDontSave
-            };
-            _camera = camObj.AddComponent<Camera>();
+            }.AddComponent<Camera>();
             _camera.orthographic = true;
             _camera.clearFlags = CameraClearFlags.SolidColor;
             _camera.backgroundColor = Color.clear;
             _camera.enabled = false;
+            _camera.cullingMask = 1 << CameraLayer;
 
             // Create sprite renderer object for drawing item textures 
-            GameObject spriteObj = new GameObject("ItemTextureExtractor_Sprite")
+            _renderer = new GameObject("ItemTextureExtractor_Sprite")
             {
-                hideFlags = HideFlags.HideAndDontSave
-            };
-            _renderer = spriteObj.AddComponent<SpriteRenderer>();
-
-            // Set layer to unique for prevent render other objects
-            spriteObj.layer = 31;
-            _camera.cullingMask = 1 << 31;
+                hideFlags = HideFlags.HideAndDontSave,
+                layer = CameraLayer
+            }.AddComponent<SpriteRenderer>();
         }
 
-        public IEnumerator TryExtract()
+        public override void Run()
+        {
+            Plugin.StartCoroutine(TryExtract());
+        }
+
+        private IEnumerator TryExtract()
         {
             if (!_extractEnabled.Value) yield break;
 
@@ -317,10 +325,6 @@ namespace kim.present.lumaisland.replaceitemicons
         {
             if (extract.CaptureRenderTexture) RenderTexture.ReleaseTemporary(extract.CaptureRenderTexture);
         }
-
-        private void LogInfo(string message) => _logger.LogInfo(LogTag + " " + message);
-        private void LogWarning(string message) => _logger.LogWarning(LogTag + " " + message);
-        private void LogError(string message) => _logger.LogError(LogTag + " " + message);
 
         public void Dispose()
         {
